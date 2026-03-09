@@ -1,0 +1,35 @@
+@mixin panel {
+  background: $panel-bg;
+  border: 1px solid $border-soft;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-soft;
+  padding: $space-lg;
+}
+
+@mixin button-base {
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.15rem;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+@mixin heading-lg {
+  font-family: $font-heading;
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
+  line-height: 1.1;
+  color: $text-primary;
+}
