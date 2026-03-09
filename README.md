@@ -11,10 +11,10 @@ Assignments are stored in **MongoDB**, and queries are executed using **pg-mem**
 
 * View a list of SQL assignments
 * Open an assignment and read the problem statement
-* Write SQL queries in an editor
+* Write SQL queries in a SQL editor
 * Execute queries in a sandbox PostgreSQL environment
 * Display query results in a table
-* Generate hints for assignments
+* Generate hints for assignments using an LLM
 * Store assignment attempts
 
 ---
@@ -34,7 +34,7 @@ Assignments are stored in **MongoDB**, and queries are executed using **pg-mem**
 
 ## Databases
 
-* MongoDB (stores assignments)
+* MongoDB (stores assignments and attempts)
 * pg-mem (in-memory PostgreSQL sandbox)
 
 ## Other Libraries
@@ -112,6 +112,9 @@ cipher-sql-studio
 │   ├── package.json
 │   └── package-lock.json
 │
+├── diagrams
+│   └── data-flow-diagram.jpg
+│
 ├── .gitignore
 └── README.md
 ```
@@ -129,17 +132,25 @@ cipher-sql-studio
 
 ---
 
-# Data Flow
+# Data Flow Diagram
 
-User → Frontend → Backend API → PostgreSQL Sandbox → Backend → Frontend → User
+The following diagram illustrates the execution flow when a user runs a SQL query in CipherSQL Studio.
 
-Steps:
+The diagram was **drawn by hand** to represent the data flow between the frontend, backend, databases, and the result display.
 
-1. User selects an assignment.
-2. User writes a SQL query.
-3. Query is sent to backend API.
-4. Backend executes query using pg-mem.
-5. Results are returned and displayed.
+![Data Flow Diagram](diagrams/data-flow-diagram.jpg)
+
+### Data Flow Explanation
+
+1. User writes a SQL query in the SQL editor and clicks **Execute Query**.
+2. React frontend sends an **API request** to the backend.
+3. The **Node.js / Express backend** receives the request.
+4. The backend validates and executes the SQL query using **pg-mem PostgreSQL sandbox**.
+5. PostgreSQL returns the **query result or error**.
+6. The backend stores the **query attempt in MongoDB**.
+7. The backend sends a **JSON response** back to the frontend.
+8. React updates the application state.
+9. The **Result Table component** displays the query output.
 
 ---
 
@@ -271,4 +282,5 @@ Returns a hint for the assignment.
 
 # Conclusion
 
-This project demonstrates a simple SQL practice platform built using **React, Node.js, Express, MongoDB, and pg-mem**. The sandbox database allows safe execution of SQL queries while storing assignments and attempts.
+CipherSQL Studio demonstrates a SQL learning platform built using **React, Node.js, Express, MongoDB, and pg-mem**.
+The sandbox database allows safe execution of SQL queries while storing assignments and attempts.
