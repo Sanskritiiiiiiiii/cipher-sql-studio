@@ -133,9 +133,13 @@ const AssignmentAttempt = () => {
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => setQuery("")}
+                onClick={() => {
+                  setQuery("");
+                  setResult({ columns: [], rows: [] });
+                  setQueryError("");
+                }}
               >
-                Clear
+                Clear 
               </button>
             </div>
 

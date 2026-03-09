@@ -1,43 +1,29 @@
-const path = require("path");
-const { spawn } = require("child_process");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const generateHint = (payload) => {
-  return new Promise((resolve, reject) => {
-    const workerPath = path.resolve(__dirname, "../controllers/hint_worker.py");
-    const pythonBin = "python";
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    const worker = spawn(pythonBin, [workerPath]);
+const generateHint = async ({ assignment, query }) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    let stdout = "";
-    let stderr = "";
+  const prompt = `
+You are helping a student learn SQL.
 
-    worker.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
+Assignment: ${assignment.title}
 
-    worker.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
+Description:
+${assignment.description}
 
-    worker.on("close", (code) => {
-      if (code !== 0) {
-        return reject(new Error(stderr || "Hint generation failed"));
-      }
+Student Query:
+${query}
 
-      try {
-        const parsed = JSON.parse(stdout);
-        if (!parsed.hint) {
-          return reject(new Error("Invalid hint response"));
-        }
-        resolve(parsed.hint);
-      } catch {
-        reject(new Error("Invalid hint response"));
-      }
-    });
+Give ONLY a hint to guide the student.
+Do NOT give the full SQL solution.
+`;
 
-    worker.stdin.write(JSON.stringify(payload));
-    worker.stdin.end();
-  });
+  const result = await model.generateContent(prompt);
+  const response = result.response.text();
+
+  return response;
 };
 
 module.exports = {
