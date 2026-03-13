@@ -1,15 +1,15 @@
+const { v4: uuidv4 } = require("uuid");
 const { getMongoDb } = require("./mongo");
 const { getSandboxSchema } = require("./postgresSandbox");
 
-const schema = getSandboxSchema();
-
 const assignmentSeedData = [
   {
-    id: "assignment_1",
-    title: "Find Engineering employees",
-    description: "Find employees from the Engineering department.",
+    id: uuidv4(),
+    title: "Find all Engineering employees",
+    description:
+      "Write a query to list all employees from the Engineering department with their name and salary.",
     difficulty: "Easy",
-    schema,
+    schema: getSandboxSchema(),
     sampleData: {
       employees: [
         { id: 1, name: "Ishita", department: "Engineering", salary: 90000 },
@@ -19,11 +19,12 @@ const assignmentSeedData = [
     },
   },
   {
-    id: "assignment_2",
+    id: uuidv4(),
     title: "Total order amount per student",
-    description: "Show each student_id and the total order amount.",
+    description:
+      "Write a query to show each student_id and the total order amount. Sort by total in descending order.",
     difficulty: "Medium",
-    schema,
+    schema: getSandboxSchema(),
     sampleData: {
       orders: [
         { id: 1, student_id: 1, amount: 150.0, order_date: "2025-01-10" },
@@ -33,11 +34,12 @@ const assignmentSeedData = [
     },
   },
   {
-    id: "assignment_3",
+    id: uuidv4(),
     title: "Students with grade A",
-    description: "Find students who have grade A.",
+    description:
+      "Write a query to return student names and ages for students whose grade is A.",
     difficulty: "Easy",
-    schema,
+    schema: getSandboxSchema(),
     sampleData: {
       students: [
         { id: 1, name: "Aarav", age: 20, grade: "A" },
@@ -53,7 +55,9 @@ const seedAssignments = async () => {
   const assignmentsCollection = db.collection("assignments");
 
   const count = await assignmentsCollection.countDocuments({});
-  if (count > 0) return;
+  if (count > 0) {
+    return;
+  }
 
   await assignmentsCollection.insertMany(assignmentSeedData);
 };

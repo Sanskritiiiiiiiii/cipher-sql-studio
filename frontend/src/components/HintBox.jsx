@@ -4,7 +4,7 @@ const HintBox = ({ hint, loading, onGetHint }) => {
   return (
     <section className="hint-box">
       <div className="hint-box__header">
-        <h3>Hint</h3>
+        <h3>AI Hint</h3>
 
         <button
           type="button"
@@ -12,12 +12,12 @@ const HintBox = ({ hint, loading, onGetHint }) => {
           onClick={onGetHint}
           disabled={loading}
         >
-          {loading ? "Getting hint..." : "Get Hint"}
+          {loading ? "Getting Hint..." : "Get Hint"}
         </button>
       </div>
 
       <p>
-        {hint || "Click 'Get Hint' to receive a helpful hint."}
+        {hint || "Click 'Get Hint' to receive a directional tip (no full answer)."}
       </p>
     </section>
   );

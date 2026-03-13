@@ -23,21 +23,30 @@ const AssignmentList = () => {
   }, []);
 
   return (
-    <main className="assignment-list-page">
-      <section className="hero-panel">
-        <p>CipherSQLStudio</p>
-        <h1>Practice SQL queries in a sandbox environment</h1>
-        <p>
-          Choose an assignment, write a query, run it, and get hints if needed.
+    <main className="assignment-list-page" data-testid="assignment-list-page">
+      <section className="hero-panel" data-testid="assignment-list-hero">
+        <p data-testid="app-badge">CipherSQLStudio</p>
+        <h1 data-testid="app-main-heading">Practice SQL in a clean sandbox</h1>
+        <p data-testid="app-sub-heading">
+          Pick an assignment, write your SQL, run it instantly, and use AI hints
+          when you get stuck.
         </p>
       </section>
 
-      {loading && <p className="empty-state">Loading assignments...</p>}
+      {loading && (
+        <p className="empty-state" data-testid="assignment-loading-message">
+          Loading assignments...
+        </p>
+      )}
 
-      {error && <p className="error-box">{error}</p>}
+      {error && (
+        <p className="error-box" data-testid="assignment-error-message">
+          {error}
+        </p>
+      )}
 
       {!loading && !error && (
-        <section className="assignment-grid">
+        <section className="assignment-grid" data-testid="assignment-list-grid">
           {assignments.map((assignment) => (
             <AssignmentCard key={assignment.id} assignment={assignment} />
           ))}

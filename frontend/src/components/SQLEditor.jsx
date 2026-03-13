@@ -3,14 +3,12 @@ import Editor from "@monaco-editor/react";
 
 const SQLEditor = ({ value, onChange }) => {
   return (
-    <div className="sql-editor">
+    <div className="sql-editor" data-testid="sql-editor-container">
       <Editor
         height="280px"
         defaultLanguage="sql"
         value={value}
-        onChange={(nextValue) => {
-          onChange(nextValue || "");
-        }}
+        onChange={(nextValue) => onChange(nextValue || "")}
         options={{
           minimap: { enabled: false },
           fontSize: 14,

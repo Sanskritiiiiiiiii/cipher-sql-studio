@@ -1,22 +1,25 @@
 const { newDb } = require("pg-mem");
 
 let client = null;
+let memoryDb = null;
 let seeded = false;
 
 const createConnection = async () => {
-  if (client) return client;
+  if (client) {
+    return client;
+  }
 
-  const db = newDb();
-  const { Client } = db.adapters.createPg();
-
+  memoryDb = newDb();
+  const { Client } = memoryDb.adapters.createPg();
   client = new Client();
   await client.connect();
-
   return client;
 };
 
 const seedTables = async () => {
-  if (seeded) return;
+  if (seeded) {
+    return;
+  }
 
   const dbClient = await createConnection();
 
@@ -66,47 +69,53 @@ const seedTables = async () => {
   seeded = true;
 };
 
-const ensureReadOnlyQuery = (query) => {
+const validateSingleStatementQuery = (query) => {
   const trimmed = (query || "").trim();
-
   if (!trimmed) {
     throw new Error("Query cannot be empty.");
   }
 
   const statements = trimmed
     .split(";")
-    .map((s) => s.trim())
+    .map((part) => part.trim())
     .filter(Boolean);
 
   if (statements.length > 1) {
-    throw new Error("Only one SQL statement is allowed.");
+    throw new Error("Only one SQL statement is allowed per execution.");
   }
 
-  const lower = trimmed.toLowerCase();
+  const transactionControlPattern = /\b(begin|commit|rollback|savepoint)\b/i;
+  if (transactionControlPattern.test(trimmed)) {
+    throw new Error("Transaction control commands are not allowed in this sandbox.");
+  }
+};
 
-  const blocked = [
-    "insert",
-    "update",
-    "delete",
-    "drop",
-    "alter",
-    "truncate",
-    "create",
-  ];
+const runInsideSandboxRollback = async (dbClient, query) => {
+  if (!memoryDb) {
+    throw new Error("Sandbox database is not initialized.");
+  }
 
-  if (blocked.some((keyword) => lower.startsWith(keyword))) {
-    throw new Error("Only read-only SQL queries are allowed in this sandbox.");
+  const rollbackPoint = memoryDb.backup();
+  try {
+    return await dbClient.query(query);
+  } finally {
+    rollbackPoint.restore();
   }
 };
 
 const executeSandboxQuery = async (query) => {
-  ensureReadOnlyQuery(query);
-
+  validateSingleStatementQuery(query);
   const dbClient = await createConnection();
-  const result = await dbClient.query(query);
+  const result = await runInsideSandboxRollback(dbClient, query);
+
+  const columnsFromFields = Array.isArray(result.fields)
+    ? result.fields.map((field) => field.name)
+    : [];
+
+  const columnsFromRows = result.rows.length > 0 ? Object.keys(result.rows[0]) : [];
 
   return {
-    columns: Object.keys(result.rows[0] || {}),
+    columns: columnsFromFields.length > 0 ? columnsFromFields : columnsFromRows,
     rows: result.rows,
     rowCount: result.rowCount,
   };

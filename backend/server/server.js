@@ -1,25 +1,30 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 
 const { connectMongo, closeMongo } = require("./config/mongo");
+const { env } = require("./config/env");
 const { seedTables } = require("./config/postgresSandbox");
 const { seedAssignments } = require("./config/seedAssignments");
-
 const assignmentsRoutes = require("./routes/assignments");
 const executeQueryRoutes = require("./routes/executeQuery");
 const hintRoutes = require("./routes/hint");
+const historyRoutes = require("./routes/history");
+const { notFoundHandler } = require("./middleware/notFoundMiddleware");
+const { errorHandler } = require("./middleware/errorHandler");
 
-dotenv.config();
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
-const port = process.env.PORT || 8002;
-
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", service: "node-express", postgresUri: env.postgresUri });
 });
 
 app.get("/api", (_req, res) => {
@@ -29,19 +34,19 @@ app.get("/api", (_req, res) => {
 app.use("/api/assignments", assignmentsRoutes);
 app.use("/api/execute", executeQueryRoutes);
 app.use("/api/hint", hintRoutes);
+app.use("/api/history", historyRoutes);
 
-app.use("/api/*", (_req, res) => {
-  res.status(404).json({ message: "API route not found." });
-});
+app.use("/api/*", notFoundHandler);
+app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    await connectMongo(process.env.MONGO_URL, process.env.DB_NAME);
+    await connectMongo(env.mongoUri, env.dbName);
     await seedTables();
     await seedAssignments();
 
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+    app.listen(env.port, () => {
+      console.log(`CipherSQLStudio Node API running at http://127.0.0.1:${env.port}`);
     });
   } catch (error) {
     console.error("Server startup error:", error.message);

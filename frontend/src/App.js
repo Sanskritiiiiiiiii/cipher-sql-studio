@@ -6,7 +6,7 @@ import AssignmentAttempt from "@/pages/AssignmentAttempt";
 
 function App() {
   return (
-    <div className="App app-shell">
+    <div className="App app-shell" data-testid="app-shell">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AssignmentList />} />
