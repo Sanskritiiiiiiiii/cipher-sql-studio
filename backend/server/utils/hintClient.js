@@ -1,31 +1,39 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const path = require("path");
+const { spawn } = require("child_process");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const generateHint = (payload) => {
+  return new Promise((resolve, reject) => {
+    const workerPath = path.resolve(__dirname, "../controllers/hint_worker.py");
 
-const generateHint = async ({ assignment, query }) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const worker = spawn("python", [workerPath]);
 
-  const prompt = `
-You are helping a student learn SQL.
+    let stdout = "";
+    let stderr = "";
 
-Assignment: ${assignment.title}
+    worker.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
 
-Description:
-${assignment.description}
+    worker.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
 
-Student Query:
-${query}
+    worker.on("close", (code) => {
+      if (code !== 0) {
+        return reject(new Error(stderr || "Hint worker failed"));
+      }
 
-Give ONLY a hint to guide the student.
-Do NOT give the full SQL solution.
-`;
+      try {
+        const result = JSON.parse(stdout);
+        resolve(result.hint);
+      } catch (err) {
+        reject(new Error("Invalid hint response"));
+      }
+    });
 
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
-
-  return response;
+    worker.stdin.write(JSON.stringify(payload));
+    worker.stdin.end();
+  });
 };
 
-module.exports = {
-  generateHint,
-};
+module.exports = { generateHint };
