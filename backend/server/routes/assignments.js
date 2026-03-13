@@ -1,8 +1,5 @@
 const express = require("express");
-const {
-  getAssignments,
-  getAssignmentById,
-} = require("../controllers/assignmentsController");
+const { getAssignments, getAssignmentById } = require("../controllers/assignmentsController");
 
 const router = express.Router();
 
