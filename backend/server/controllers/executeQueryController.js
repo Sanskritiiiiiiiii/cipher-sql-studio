@@ -1,52 +1,34 @@
-const { getMongoDb } = require("../config/mongo");
 const { executeSandboxQuery } = require("../config/postgresSandbox");
+const { saveQueryAttempt } = require("../utils/queryHistory");
 
-const sanitizeSqlErrorMessage = () => {
-  return "Invalid SQL query. Please check syntax, table names, and column names.";
-};
-
-const executeQuery = async (req, res) => {
+const executeQuery = async (req, res, next) => {
   const { assignmentId, query } = req.body;
 
   if (!query || !query.trim()) {
-    return res.status(400).json({ message: "Query cannot be empty." });
+    return next({ statusCode: 400, message: "Query cannot be empty." });
   }
-
-  const db = getMongoDb();
-  const attemptsCollection = db.collection("attempts");
 
   try {
     const result = await executeSandboxQuery(query);
 
-    const attemptDoc = {
+    await saveQueryAttempt({
       assignmentId: assignmentId || null,
-      query,
-      success: true,
-      rowCount: result.rowCount,
-      resultPreview: result.rows.slice(0, 5),
-      createdAt: new Date().toISOString(),
-    };
-
-    await attemptsCollection.insertOne(attemptDoc);
+      queryText: query,
+      executionStatus: "success",
+    });
 
     res.json(result);
   } catch (error) {
-    const userSafeMessage = sanitizeSqlErrorMessage();
-
-    const attemptDoc = {
+    await saveQueryAttempt({
       assignmentId: assignmentId || null,
-      query,
-      success: false,
-      error: error.message,
-      createdAt: new Date().toISOString(),
-    };
+      queryText: query,
+      executionStatus: "error",
+    }).catch(() => {});
 
-    await attemptsCollection.insertOne(attemptDoc);
-
-    res.status(400).json({ message: userSafeMessage });
+    next(error);
   }
 };
 
 module.exports = {
-  executeQuery,
+  executeQuery
 };

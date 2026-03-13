@@ -1,6 +1,6 @@
 const { getMongoDb } = require("../config/mongo");
 
-const getAssignments = async (_req, res) => {
+const getAssignments = async (req, res) => {
   const db = getMongoDb();
 
   const assignments = await db
@@ -16,7 +16,10 @@ const getAssignmentById = async (req, res) => {
 
   const assignment = await db
     .collection("assignments")
-    .findOne({ id: req.params.id }, { projection: { _id: 0 } });
+    .findOne(
+      { id: req.params.id },
+      { projection: { _id: 0 } }
+    );
 
   if (!assignment) {
     return res.status(404).json({ message: "Assignment not found." });
@@ -27,5 +30,5 @@ const getAssignmentById = async (req, res) => {
 
 module.exports = {
   getAssignments,
-  getAssignmentById,
+  getAssignmentById
 };

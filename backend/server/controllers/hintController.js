@@ -1,12 +1,12 @@
 const { getMongoDb } = require("../config/mongo");
 const { generateHint } = require("../utils/hintClient");
 
-const buildFallbackHint = (assignment, queryText) => {
-  if (!queryText || !queryText.trim()) {
-    return `Start with a basic SELECT query for "${assignment.title}".`;
+const buildFallbackHint = (assignment, query) => {
+  if (!query || !query.trim()) {
+    return `Start by identifying the main table for "${assignment.title}" and write a basic SELECT ... FROM query.`;
   }
 
-  return "Check your SELECT columns, FROM table, and WHERE conditions.";
+  return "Check your SELECT columns, FROM table, and filtering or aggregation logic carefully.";
 };
 
 const getHint = async (req, res) => {
@@ -17,9 +17,10 @@ const getHint = async (req, res) => {
   }
 
   const db = getMongoDb();
-  const assignmentsCollection = db.collection("assignments");
 
-  const assignment = await assignmentsCollection.findOne({ id: assignmentId });
+  const assignment = await db
+    .collection("assignments")
+    .findOne({ id: assignmentId }, { projection: { _id: 0 } });
 
   if (!assignment) {
     return res.status(404).json({ message: "Assignment not found." });
@@ -29,12 +30,11 @@ const getHint = async (req, res) => {
     const hint = await generateHint({ assignment, query });
     res.json({ hint });
   } catch (error) {
-    console.error("Hint error:", error.message);
-    const fallbackHint = buildFallbackHint(assignment, query);
-    res.json({ hint: fallbackHint });
+    console.error("Hint generation failed:", error.message);
+    res.json({ hint: buildFallbackHint(assignment, query) });
   }
 };
 
 module.exports = {
-  getHint,
+  getHint
 };
