@@ -69,19 +69,11 @@ const seedTables = async () => {
   seeded = true;
 };
 
-const validateSingleStatementQuery = (query) => {
+const validateQuery = (query) => {
   const trimmed = (query || "").trim();
+
   if (!trimmed) {
     throw new Error("Query cannot be empty.");
-  }
-
-  const statements = trimmed
-    .split(";")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (statements.length > 1) {
-    throw new Error("Only one SQL statement is allowed per execution.");
   }
 
   const transactionControlPattern = /\b(begin|commit|rollback|savepoint)\b/i;
@@ -90,29 +82,78 @@ const validateSingleStatementQuery = (query) => {
   }
 };
 
-const runInsideSandboxRollback = async (dbClient, query) => {
-  if (!memoryDb) {
-    throw new Error("Sandbox database is not initialized.");
-  }
-
-  const rollbackPoint = memoryDb.backup();
-  try {
-    return await dbClient.query(query);
-  } finally {
-    rollbackPoint.restore();
-  }
+const splitStatements = (query) => {
+  return query
+    .split(";")
+    .map((q) => q.trim())
+    .filter((q) => q.length > 0);
 };
 
-const executeSandboxQuery = async (query) => {
-  validateSingleStatementQuery(query);
+const executeStatements = async (dbClient, statements) => {
+  let lastResult = null;
+
+  for (const stmt of statements) {
+    lastResult = await dbClient.query(stmt);
+  }
+
+  return lastResult;
+};
+
+
+const executeSandboxQuery = async (query, options = {}) => {
+  validateQuery(query);
+
   const dbClient = await createConnection();
-  const result = await runInsideSandboxRollback(dbClient, query);
+
+  const statements = splitStatements(query);
+
+  let result = null;
+
+  // playground mode → run normally
+  if (options.playground) {
+    for (const stmt of statements) {
+      result = await dbClient.query(stmt);
+    }
+  } 
+  // assignment mode → rollback protection
+  else {
+    const executeSandboxQuery = async (query) => {
+  const dbClient = await createConnection();
+
+  const statements = query
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  let result = null;
+
+  for (const stmt of statements) {
+    result = await dbClient.query(stmt);
+  }
 
   const columnsFromFields = Array.isArray(result.fields)
     ? result.fields.map((field) => field.name)
     : [];
 
-  const columnsFromRows = result.rows.length > 0 ? Object.keys(result.rows[0]) : [];
+  const columnsFromRows =
+    result.rows.length > 0 ? Object.keys(result.rows[0]) : [];
+
+  return {
+    columns:
+      columnsFromFields.length > 0 ? columnsFromFields : columnsFromRows,
+    rows: result.rows,
+    rowCount: result.rowCount,
+  };
+};
+  }
+
+  const columnsFromFields = Array.isArray(result.fields)
+    ? result.fields.map((field) => field.name)
+    : [];
+
+  const columnsFromRows = result.rows.length > 0
+    ? Object.keys(result.rows[0])
+    : [];
 
   return {
     columns: columnsFromFields.length > 0 ? columnsFromFields : columnsFromRows,

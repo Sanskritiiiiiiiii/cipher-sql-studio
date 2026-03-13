@@ -1,19 +1,22 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "@/styles/main.scss";
+
 import AssignmentList from "@/pages/AssignmentList";
 import AssignmentAttempt from "@/pages/AssignmentAttempt";
+import Playground from "@/pages/Playground";
 
 function App() {
   return (
-    <div className="App app-shell" data-testid="app-shell">
-      <BrowserRouter>
+    <BrowserRouter>
+      <div className="App app-shell">
         <Routes>
           <Route path="/" element={<AssignmentList />} />
           <Route path="/assignment/:id" element={<AssignmentAttempt />} />
+          <Route path="/playground" element={<Playground />} />
         </Routes>
-      </BrowserRouter>
-    </div>
+      </div>
+    </BrowserRouter>
   );
 }
 

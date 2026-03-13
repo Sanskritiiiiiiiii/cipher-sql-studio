@@ -5,7 +5,10 @@ const generateHint = (payload) => {
   return new Promise((resolve, reject) => {
     const workerPath = path.resolve(__dirname, "../controllers/hint_worker.py");
 
-    const worker = spawn("python", [workerPath]);
+    // use PYTHON_BIN from .env or fallback to "py"
+    const pythonBin = process.env.PYTHON_BIN || "py";
+
+    const worker = spawn(pythonBin, [workerPath]);
 
     let stdout = "";
     let stderr = "";
@@ -16,6 +19,10 @@ const generateHint = (payload) => {
 
     worker.stderr.on("data", (data) => {
       stderr += data.toString();
+    });
+
+    worker.on("error", (err) => {
+      reject(err);
     });
 
     worker.on("close", (code) => {
